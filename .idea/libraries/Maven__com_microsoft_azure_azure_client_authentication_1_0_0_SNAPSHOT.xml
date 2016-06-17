@@ -1,13 +1,13 @@
 <component name="libraryTable">
   <library name="Maven: com.microsoft.azure:azure-client-authentication:1.0.0-SNAPSHOT">
     <CLASSES>
-      <root url="jar://$MAVEN_REPOSITORY$/com/microsoft/azure/azure-client-authentication/1.0.0-SNAPSHOT/azure-client-authentication-1.0.0-20160610.000623-4.jar!/" />
+      <root url="jar://$MAVEN_REPOSITORY$/com/microsoft/azure/azure-client-authentication/1.0.0-SNAPSHOT/azure-client-authentication-1.0.0-20160513.000802-24.jar!/" />
     </CLASSES>
     <JAVADOC>
-      <root url="jar://$MAVEN_REPOSITORY$/com/microsoft/azure/azure-client-authentication/1.0.0-SNAPSHOT/azure-client-authentication-1.0.0-20160610.000623-4-javadoc.jar!/" />
+      <root url="jar://$MAVEN_REPOSITORY$/com/microsoft/azure/azure-client-authentication/1.0.0-SNAPSHOT/azure-client-authentication-1.0.0-20160513.000802-24-javadoc.jar!/" />
     </JAVADOC>
     <SOURCES>
-      <root url="jar://$MAVEN_REPOSITORY$/com/microsoft/azure/azure-client-authentication/1.0.0-SNAPSHOT/azure-client-authentication-1.0.0-20160610.000623-4-sources.jar!/" />
+      <root url="jar://$MAVEN_REPOSITORY$/com/microsoft/azure/azure-client-authentication/1.0.0-SNAPSHOT/azure-client-authentication-1.0.0-20160513.000802-24-sources.jar!/" />
     </SOURCES>
   </library>
 </component>
