@@ -85,7 +85,6 @@ public class PutAzureDataLake extends AbstractProcessor {
             .name("Account name")
             .description("Azure account name")
             .required(true)
-            .expressionLanguageSupported(true)
             .addValidator(StandardValidators.NON_EMPTY_VALIDATOR)
             .build();
 
