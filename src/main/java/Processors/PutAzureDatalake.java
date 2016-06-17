@@ -24,16 +24,16 @@ import org.apache.nifi.processor.ProcessContext;
 import org.apache.nifi.processor.ProcessSession;
 import org.apache.nifi.processor.ProcessorInitializationContext;
 import org.apache.nifi.processor.Relationship;
+import org.apache.nifi.flowfile.attributes.CoreAttributes;
+import org.apache.nifi.annotation.behavior.ReadsAttribute;
 import org.apache.nifi.annotation.behavior.SideEffectFree;
 import org.apache.nifi.annotation.documentation.CapabilityDescription;
 import org.apache.nifi.annotation.documentation.Tags;
 import org.apache.nifi.processor.exception.ProcessException;
 import org.apache.nifi.processor.io.InputStreamCallback;
-import org.apache.nifi.processor.io.OutputStreamCallback;
 import org.apache.nifi.processor.util.StandardValidators;
 import org.apache.nifi.annotation.behavior.InputRequirement;
 import org.apache.nifi.annotation.behavior.InputRequirement.Requirement;
-import org.apache.nifi.expression.AttributeExpression;
 
 
 /**
@@ -43,8 +43,9 @@ import org.apache.nifi.expression.AttributeExpression;
 @InputRequirement(Requirement.INPUT_REQUIRED)
 @SideEffectFree
 @Tags({"datalake", "open energi", "adl", "azure", "put"})
-@CapabilityDescription("Store flowfiles in Azure Datalake")
-public class PutAzureDatalake extends AbstractProcessor {
+@CapabilityDescription("Store flowfiles in Azure Data Lake")
+@ReadsAttribute(attribute = "filename", description = "Uses the FlowFile's filename as the filename for the ADL object")
+public class PutAzureDataLake extends AbstractProcessor {
     /*
         Azure Java SDK:
         https://azure.microsoft.com/en-gb/documentation/articles/data-lake-store-get-started-java-sdk/
@@ -58,13 +59,26 @@ public class PutAzureDatalake extends AbstractProcessor {
     private DataLakeStoreFileSystemManagementClient adlsFileSystemClient;
     private String adlsAccountName;
 
+    public static final String REPLACE_RESOLUTION = "replace";
+    public static final String APPEND_RESOLUTION = "append";
+    public static final String FAIL_RESOLUTION = "fail";
 
-    public static final PropertyDescriptor OBJECT_NAME = new PropertyDescriptor.Builder()
-            .name("Object name")
-            .description("Path for file in Axure Datalake, e.g. /test/test1.txt")
+    private Boolean needRefresh = true;
+
+    public static final PropertyDescriptor PATH_NAME = new PropertyDescriptor.Builder()
+            .name("Path")
+            .description("Path for file in Azure Data Lake, e.g. /test/")
             .required(true)
             .expressionLanguageSupported(true)
             .addValidator(StandardValidators.NON_EMPTY_VALIDATOR)
+            .build();
+
+    public static final PropertyDescriptor OVERWRITE = new PropertyDescriptor.Builder()
+            .name("Overwrite policy")
+            .description("Specifies what to do if the file already exists on Data Lake")
+            .required(true)
+            .defaultValue(APPEND_RESOLUTION)
+            .allowableValues(REPLACE_RESOLUTION, APPEND_RESOLUTION, FAIL_RESOLUTION)
             .build();
 
     public static final PropertyDescriptor ACCOUNT_NAME = new PropertyDescriptor.Builder()
@@ -75,19 +89,10 @@ public class PutAzureDatalake extends AbstractProcessor {
             .addValidator(StandardValidators.NON_EMPTY_VALIDATOR)
             .build();
 
-    public static final PropertyDescriptor RESOURCE_GROUP = new PropertyDescriptor.Builder()
-            .name("Resource group name")
-            .description("Azure resource group name")
-            .required(true)
-            .expressionLanguageSupported(true)
-            .addValidator(StandardValidators.NON_EMPTY_VALIDATOR)
-            .build();
-
     public static final PropertyDescriptor TENANT_ID = new PropertyDescriptor.Builder()
             .name("Tenant ID")
             .description("Azure tenant ID")
             .required(true)
-            .expressionLanguageSupported(true)
             .addValidator(StandardValidators.NON_EMPTY_VALIDATOR)
             .build();
 
@@ -95,7 +100,6 @@ public class PutAzureDatalake extends AbstractProcessor {
             .name("Subscription ID")
             .description("Azure subscription ID")
             .required(true)
-            .expressionLanguageSupported(true)
             .addValidator(StandardValidators.NON_EMPTY_VALIDATOR)
             .build();
 
@@ -103,7 +107,6 @@ public class PutAzureDatalake extends AbstractProcessor {
             .name("Client ID")
             .description("Azure client ID")
             .required(true)
-            .expressionLanguageSupported(true)
             .addValidator(StandardValidators.NON_EMPTY_VALIDATOR)
             .build();
 
@@ -133,9 +136,9 @@ public class PutAzureDatalake extends AbstractProcessor {
         this.relationships = Collections.unmodifiableSet(relationships);
 
         final List<PropertyDescriptor> properties = new ArrayList<>();
-        properties.add(OBJECT_NAME);
+        properties.add(PATH_NAME);
+        properties.add(OVERWRITE);
         properties.add(ACCOUNT_NAME);
-        properties.add(RESOURCE_GROUP);
         properties.add(TENANT_ID);
         properties.add(SUBSCRIPTION_ID);
         properties.add(CLIENT_ID);
@@ -145,27 +148,41 @@ public class PutAzureDatalake extends AbstractProcessor {
 
     @OnScheduled
     public void onScheduled(final ProcessContext context) {
+        // Process Azure credentials
+        final String clientId = context.getProperty(CLIENT_ID).getValue();
+        final String tenantId = context.getProperty(TENANT_ID).getValue();
+        final String clientSecret = context.getProperty(CLIENT_SECRET).getValue();
+        final String subscriptionId = context.getProperty(SUBSCRIPTION_ID).getValue();
+        final String accountName = context.getProperty(ACCOUNT_NAME).getValue();
+
+        AzureSetup(clientId, tenantId, clientSecret, subscriptionId, accountName);
+    }
+
+    private void AzureSetup(String clientId, String tenantId, String clientSecret,
+                            String subscriptionId, String accountName) {
         final ProcessorLog log = this.getLogger();
 
-        // Process Azure credentials
-        final String clientId = context.getProperty(CLIENT_ID).evaluateAttributeExpressions().getValue();
-        final String tenantId = context.getProperty(TENANT_ID).evaluateAttributeExpressions().getValue();
-        final String clientSecret = context.getProperty(CLIENT_SECRET).evaluateAttributeExpressions().getValue();
-        final String subscriptionId = context.getProperty(SUBSCRIPTION_ID).evaluateAttributeExpressions().getValue();
-        adlsAccountName = context.getProperty(ACCOUNT_NAME).evaluateAttributeExpressions().getValue();
+        log.debug("Setting up ADL credentials");
         ApplicationTokenCredentials credentials = new ApplicationTokenCredentials(clientId,
                 tenantId, clientSecret, null);
-
-        log.debug("Setting up ADL credentials");
+        adlsAccountName = accountName;
         adlsClient = new DataLakeStoreAccountManagementClientImpl(credentials);
         adlsFileSystemClient = new DataLakeStoreFileSystemManagementClientImpl(credentials);
         adlsClient.setSubscriptionId(subscriptionId);
+        needRefresh = false;
     }
 
-    public void AzureCreateFile(String path, String contents, boolean force) throws IOException, CloudException {
+    private void AzureCreateFile(String path, String contents, boolean force) throws IOException, CloudException {
         byte[] bytesContents = contents.getBytes();
 
         adlsFileSystemClient.getFileSystemOperations().create(adlsAccountName, path, bytesContents, force);
+    }
+
+    private void AzureAppendFile(String path, String contents) throws IOException, CloudException {
+        byte[] bytesContents = contents.getBytes();
+
+        adlsFileSystemClient.getFileSystemOperations().concurrentAppend(adlsAccountName,
+                path, bytesContents, AppendModeType.AUTOCREATE);
     }
 
     @Override
@@ -176,8 +193,25 @@ public class PutAzureDatalake extends AbstractProcessor {
         if (flowFile == null) {
             return;
         }
+        // Update credentials if required
+        if (needRefresh) {
+            final String clientId = context.getProperty(CLIENT_ID).getValue();
+            final String tenantId = context.getProperty(TENANT_ID).getValue();
+            final String clientSecret = context.getProperty(CLIENT_SECRET).getValue();
+            final String subscriptionId = context.getProperty(SUBSCRIPTION_ID).getValue();
+            final String accountName = context.getProperty(ACCOUNT_NAME).getValue();
 
-        final String filename = context.getProperty(OBJECT_NAME).evaluateAttributeExpressions().getValue();
+            AzureSetup(clientId, tenantId, clientSecret, subscriptionId, accountName);
+        }
+        final String overwritePolicy = context.getProperty(OVERWRITE).getValue();
+        final String filename = flowFile.getAttributes().get(CoreAttributes.FILENAME.key());
+        final String path = context.getProperty(PATH_NAME).evaluateAttributeExpressions().getValue();
+        String fullpath;
+        // Combine into full path
+        if (path.endsWith("/"))
+            fullpath = path.concat(filename);
+        else
+            fullpath = path.concat("/").concat(filename);
 
         log.debug("Attempting to send Flowfile to ADL path: {}",
                 new Object[] {filename});
@@ -197,7 +231,19 @@ public class PutAzureDatalake extends AbstractProcessor {
                         try {
                             log.debug("Saving file to ADL");
                             // Send file to ADL
-                            AzureCreateFile(filename, in.toString(), true);
+                            switch (overwritePolicy) {
+                                case REPLACE_RESOLUTION:
+                                    AzureCreateFile(fullpath, s, true);
+                                    break;
+                                case APPEND_RESOLUTION:
+                                    AzureAppendFile(fullpath, s);
+                                    return;
+                                case FAIL_RESOLUTION:
+                                    AzureCreateFile(fullpath, s, false);
+                                    return;
+                                default:
+                                    break;
+                            }
                         } catch (IOException | CloudException ae) {
                             log.error("Failed to upload file to ADL");
                             throw new IOException(ae);
@@ -208,7 +254,7 @@ public class PutAzureDatalake extends AbstractProcessor {
             // Transfer flowfile
             final long millis = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startNanos);
             log.info("Successfully put {} to Azure Datalake in {} milliseconds",
-                    new Object[] {filename, millis});
+                    new Object[] {fullpath, millis});
             session.transfer(flowFile, REL_SUCCESS);
             session.getProvenanceReporter().send(flowFile, filename, millis);
         }  catch (final ProcessException e) {
@@ -226,6 +272,11 @@ public class PutAzureDatalake extends AbstractProcessor {
     @OnStopped
     public void onClose() {
 
+    }
+
+    @Override
+    public void onPropertyModified(final PropertyDescriptor descriptor, final String oldValue, final String newValue) {
+        needRefresh = true;
     }
 
     @Override
