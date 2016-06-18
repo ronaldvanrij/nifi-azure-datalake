@@ -54,7 +54,7 @@ public class PutAzureDataLake extends AbstractProcessor {
     private List<PropertyDescriptor> properties;
     private Set<Relationship> relationships;
 
-    // Axure objects
+    // Azure objects
     private DataLakeStoreAccountManagementClient adlsClient;
     private DataLakeStoreFileSystemManagementClient adlsFileSystemClient;
     private String adlsAccountName;
@@ -236,10 +236,10 @@ public class PutAzureDataLake extends AbstractProcessor {
                                     break;
                                 case APPEND_RESOLUTION:
                                     AzureAppendFile(fullpath, s);
-                                    return;
+                                    break;
                                 case FAIL_RESOLUTION:
                                     AzureCreateFile(fullpath, s, false);
-                                    return;
+                                    break;
                                 default:
                                     break;
                             }
