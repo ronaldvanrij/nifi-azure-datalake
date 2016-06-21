@@ -3,7 +3,7 @@
 This code implements a processor to store NiFi flowfiles in Azure Data Lake.
 
 ## Usage
-Copy the [NAR file](http://git.openenergi.net/projects/DAT/repos/nifi-azure-datalake/browse/azure-datalake-1.0-SNAPSHOT.nar)
+Copy the [NAR file](/azure-datalake-1.0-SNAPSHOT.nar)
  to NiFi's `lib` folder and restart.  Configuration requires the following parameters from Azure:
 * Client Id, Client secret, Subscription Id, and Storage account name from the [Azure portal](https://portal.azure.com).
 * Tenant Id from Windows Powershell (type `Login-AzureRmAccount` and login to get this).
