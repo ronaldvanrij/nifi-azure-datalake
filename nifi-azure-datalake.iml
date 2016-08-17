@@ -11,6 +11,8 @@
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
+    <orderEntry type="library" name="Maven: net.minidev:json-smart:1.1.1" level="project" />
+    <orderEntry type="library" name="Maven: org.slf4j:slf4j-api:1.7.5" level="project" />
     <orderEntry type="library" name="Maven: org.apache.nifi:nifi-api:0.6.1" level="project" />
     <orderEntry type="library" name="Maven: org.apache.nifi:nifi-utils:0.6.1" level="project" />
     <orderEntry type="library" name="Maven: org.apache.nifi:nifi-processor-utils:0.6.1" level="project" />

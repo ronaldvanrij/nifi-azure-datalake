@@ -204,7 +204,7 @@ public class PutAzureDataLake extends AbstractProcessor {
         }
         final String overwritePolicy = context.getProperty(OVERWRITE).getValue();
         final String filename = flowFile.getAttributes().get(CoreAttributes.FILENAME.key());
-        final String path = context.getProperty(PATH_NAME).evaluateAttributeExpressions().getValue();
+        final String path = context.getProperty(PATH_NAME).evaluateAttributeExpressions(flowFile).getValue();
         String fullpath;
         // Combine into full path
         if (path.endsWith("/"))
