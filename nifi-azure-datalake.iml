@@ -14,7 +14,20 @@
     <orderEntry type="library" name="Maven: org.apache.nifi:nifi-api:1.0.0-BETA" level="project" />
     <orderEntry type="library" name="Maven: org.apache.nifi:nifi-utils:1.0.0-BETA" level="project" />
     <orderEntry type="library" name="Maven: org.apache.nifi:nifi-security-utils:1.0.0-BETA" level="project" />
-    <orderEntry type="library" name="Maven: org.apache.commons:commons-lang3:3.4" level="project" />
+    <orderEntry type="library" name="Maven: org.bouncycastle:bcprov-jdk15on:1.54" level="project" />
+    <orderEntry type="library" name="Maven: org.bouncycastle:bcpkix-jdk15on:1.54" level="project" />
+    <orderEntry type="library" name="Maven: org.apache.nifi:nifi-processor-utils:1.0.0-BETA" level="project" />
+    <orderEntry type="library" scope="TEST" name="Maven: org.apache.nifi:nifi-mock:1.0.0-BETA" level="project" />
+    <orderEntry type="library" scope="TEST" name="Maven: org.apache.nifi:nifi-framework-api:1.0.0-BETA" level="project" />
+    <orderEntry type="library" scope="TEST" name="Maven: org.apache.nifi:nifi-expression-language:1.0.0-BETA" level="project" />
+    <orderEntry type="library" scope="TEST" name="Maven: com.jayway.jsonpath:json-path:2.0.0" level="project" />
+    <orderEntry type="library" name="Maven: net.minidev:json-smart:2.1.1" level="project" />
+    <orderEntry type="library" name="Maven: net.minidev:asm:1.0.2" level="project" />
+    <orderEntry type="library" name="Maven: asm:asm:3.3.1" level="project" />
+    <orderEntry type="library" scope="TEST" name="Maven: org.apache.nifi:nifi-data-provenance-utils:1.0.0-BETA" level="project" />
+    <orderEntry type="library" name="Maven: org.apache.nifi:nifi-api:1.0.0-BETA" level="project" />
+    <orderEntry type="library" name="Maven: org.apache.nifi:nifi-utils:1.0.0-BETA" level="project" />
+    <orderEntry type="library" name="Maven: org.apache.nifi:nifi-security-utils:1.0.0-BETA" level="project" />
     <orderEntry type="library" name="Maven: org.bouncycastle:bcprov-jdk15on:1.54" level="project" />
     <orderEntry type="library" name="Maven: org.bouncycastle:bcpkix-jdk15on:1.54" level="project" />
     <orderEntry type="library" name="Maven: org.apache.nifi:nifi-processor-utils:1.0.0-BETA" level="project" />
@@ -24,28 +37,26 @@
     <orderEntry type="library" scope="TEST" name="Maven: org.apache.nifi:nifi-expression-language:1.0.0-BETA" level="project" />
     <orderEntry type="library" scope="TEST" name="Maven: org.antlr:antlr-runtime:3.5.2" level="project" />
     <orderEntry type="library" scope="TEST" name="Maven: com.jayway.jsonpath:json-path:2.0.0" level="project" />
-    <orderEntry type="library" name="Maven: org.slf4j:slf4j-api:1.7.5" level="project" />
     <orderEntry type="library" name="Maven: net.minidev:json-smart:2.1.1" level="project" />
     <orderEntry type="library" name="Maven: net.minidev:asm:1.0.2" level="project" />
     <orderEntry type="library" name="Maven: asm:asm:3.3.1" level="project" />
-    <orderEntry type="library" name="Maven: com.fasterxml.jackson.core:jackson-databind:2.7.1" level="project" />
     <orderEntry type="library" scope="TEST" name="Maven: org.apache.nifi:nifi-data-provenance-utils:1.0.0-BETA" level="project" />
     <orderEntry type="library" scope="TEST" name="Maven: junit:junit:4.10" level="project" />
     <orderEntry type="library" scope="TEST" name="Maven: org.hamcrest:hamcrest-core:1.1" level="project" />
     <orderEntry type="library" name="Maven: com.microsoft.azure:azure-client-authentication:1.0.0-SNAPSHOT" level="project" />
-    <orderEntry type="library" name="Maven: com.microsoft.rest:client-runtime:1.0.0-SNAPSHOT" level="project" />
     <orderEntry type="library" name="Maven: com.microsoft.azure:adal4j:1.1.2" level="project" />
     <orderEntry type="library" name="Maven: com.nimbusds:oauth2-oidc-sdk:4.5" level="project" />
     <orderEntry type="library" name="Maven: javax.mail:mail:1.4.7" level="project" />
     <orderEntry type="library" name="Maven: javax.activation:activation:1.1" level="project" />
     <orderEntry type="library" name="Maven: net.jcip:jcip-annotations:1.0" level="project" />
-    <orderEntry type="library" name="Maven: commons-codec:commons-codec:1.10" level="project" />
     <orderEntry type="library" name="Maven: com.nimbusds:lang-tag:1.4" level="project" />
     <orderEntry type="library" name="Maven: com.nimbusds:nimbus-jose-jwt:3.1.2" level="project" />
     <orderEntry type="library" name="Maven: com.google.code.gson:gson:2.2.4" level="project" />
+    <orderEntry type="library" name="Maven: org.slf4j:slf4j-api:1.7.5" level="project" />
+    <orderEntry type="library" name="Maven: commons-codec:commons-codec:1.10" level="project" />
     <orderEntry type="library" name="Maven: com.microsoft.azure:azure-client-runtime:1.0.0-SNAPSHOT" level="project" />
+    <orderEntry type="library" name="Maven: com.microsoft.rest:client-runtime:1.0.0-SNAPSHOT" level="project" />
     <orderEntry type="library" name="Maven: com.squareup.okhttp3:logging-interceptor:3.1.1" level="project" />
-    <orderEntry type="library" name="Maven: com.squareup.okhttp3:okhttp:3.2.0" level="project" />
     <orderEntry type="library" name="Maven: com.fasterxml.jackson.datatype:jackson-datatype-joda:2.7.1" level="project" />
     <orderEntry type="library" name="Maven: com.fasterxml.jackson.core:jackson-annotations:2.7.0" level="project" />
     <orderEntry type="library" name="Maven: com.fasterxml.jackson.core:jackson-core:2.7.1" level="project" />
@@ -53,8 +64,11 @@
     <orderEntry type="library" name="Maven: com.squareup.okio:okio:1.7.0" level="project" />
     <orderEntry type="library" name="Maven: com.google.guava:guava:18.0" level="project" />
     <orderEntry type="library" name="Maven: com.squareup.retrofit2:converter-jackson:2.0.0-beta4" level="project" />
-    <orderEntry type="library" name="Maven: com.squareup.retrofit2:retrofit:2.0.0-beta4" level="project" />
     <orderEntry type="library" name="Maven: com.squareup.okhttp3:okhttp-urlconnection:3.1.1" level="project" />
+    <orderEntry type="library" name="Maven: org.apache.commons:commons-lang3:3.4" level="project" />
+    <orderEntry type="library" name="Maven: com.squareup.okhttp3:okhttp:3.2.0" level="project" />
+    <orderEntry type="library" name="Maven: com.fasterxml.jackson.core:jackson-databind:2.7.1" level="project" />
+    <orderEntry type="library" name="Maven: com.squareup.retrofit2:retrofit:2.0.0-beta4" level="project" />
     <orderEntry type="library" name="Maven: com.microsoft.azure:azure-mgmt-datalake-store:1.0.0-SNAPSHOT" level="project" />
   </component>
 </module>
