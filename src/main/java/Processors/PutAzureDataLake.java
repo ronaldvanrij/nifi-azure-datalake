@@ -18,7 +18,6 @@ import java.io.*;
 import org.apache.nifi.annotation.lifecycle.*;
 import org.apache.nifi.components.PropertyDescriptor;
 import org.apache.nifi.flowfile.FlowFile;
-import org.apache.nifi.logging.ProcessorLog;
 import org.apache.nifi.processor.AbstractProcessor;
 import org.apache.nifi.processor.ProcessContext;
 import org.apache.nifi.processor.ProcessSession;
@@ -159,9 +158,8 @@ public class PutAzureDataLake extends AbstractProcessor {
 
     private void AzureSetup(String clientId, String tenantId, String clientSecret,
                             String subscriptionId, String accountName) {
-        final ProcessorLog log = this.getLogger();
 
-        log.debug("Setting up ADL credentials");
+        getLogger().debug("Setting up ADL credentials");
         ApplicationTokenCredentials credentials = new ApplicationTokenCredentials(clientId,
                 tenantId, clientSecret, null);
         adlsAccountName = accountName;
@@ -186,7 +184,6 @@ public class PutAzureDataLake extends AbstractProcessor {
 
     @Override
     public void onTrigger(ProcessContext context, ProcessSession session) throws ProcessException {
-        final ProcessorLog log = this.getLogger();
 
         FlowFile flowFile = session.get();
         if (flowFile == null) {
@@ -212,7 +209,7 @@ public class PutAzureDataLake extends AbstractProcessor {
         else
             fullpath = path.concat("/").concat(filename);
 
-        log.debug("Attempting to send Flowfile to ADL path: {}",
+        getLogger().debug("Attempting to send Flowfile to ADL path: {}",
                 new Object[] {filename});
         final long startNanos = System.nanoTime();
         try {
@@ -228,7 +225,7 @@ public class PutAzureDataLake extends AbstractProcessor {
                             s = s.concat(new String(contents, 0, bytesRead));
                         }
                         try {
-                            log.debug("Saving file to ADL");
+                            getLogger().debug("Saving file to ADL");
                             // Send file to ADL
                             switch (overwritePolicy) {
                                 case REPLACE_RESOLUTION:
@@ -244,7 +241,7 @@ public class PutAzureDataLake extends AbstractProcessor {
                                     break;
                             }
                         } catch (IOException | CloudException ae) {
-                            log.error("Failed to upload file to ADL");
+                            getLogger().error("Failed to upload file to ADL");
                             throw new IOException(ae);
                         }
                     }
@@ -252,12 +249,12 @@ public class PutAzureDataLake extends AbstractProcessor {
             });
             // Transfer flowfile
             final long millis = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startNanos);
-            log.info("Successfully put {} to Azure Datalake in {} milliseconds",
+            getLogger().info("Successfully put {} to Azure Datalake in {} milliseconds",
                     new Object[] {fullpath, millis});
             session.transfer(flowFile, REL_SUCCESS);
             session.getProvenanceReporter().send(flowFile, filename, millis);
         }  catch (final ProcessException e) {
-            log.error("Failed to put {} to ADL owing to {}",
+            getLogger().error("Failed to put {} to ADL owing to {}",
                     new Object[]{flowFile, e});
             flowFile = session.penalize(flowFile);
             session.transfer(flowFile, REL_FAILURE);
