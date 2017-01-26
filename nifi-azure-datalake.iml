@@ -1,3 +1,20 @@
+Skip to content
+This repository
+Search
+Pull requests
+Issues
+Gist
+ @oetcoleman
+ Unwatch 2
+  Star 4
+ Fork 1 openenergi/nifi-azure-datalake
+ Code  Issues 1  Pull requests 1  Projects 0  Wiki  Pulse  Graphs  Settings
+Branch: master Find file Copy pathnifi-azure-datalake/nifi-azure-datalake.iml
+ae7496d  on Aug 17, 2016
+@oetcoleman oetcoleman Fixed expression evaluation on ADL path
+2 contributors @toby-coleman @oetcoleman
+RawBlameHistory     
+57 lines (57 sloc)  5.09 KB
 <?xml version="1.0" encoding="UTF-8"?>
 <module org.jetbrains.idea.maven.project.MavenProjectsManager.isMavenModule="true" type="JAVA_MODULE" version="4">
   <component name="NewModuleRootManager" LANGUAGE_LEVEL="JDK_1_8" inherit-compiler-output="false">
@@ -11,22 +28,17 @@
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
-    <orderEntry type="library" name="Maven: org.apache.nifi:nifi-api:1.0.0" level="project" />
-    <orderEntry type="library" name="Maven: org.apache.nifi:nifi-utils:1.0.0" level="project" />
-    <orderEntry type="library" name="Maven: org.apache.nifi:nifi-security-utils:1.0.0" level="project" />
-    <orderEntry type="library" name="Maven: org.bouncycastle:bcprov-jdk15on:1.54" level="project" />
-    <orderEntry type="library" name="Maven: org.bouncycastle:bcpkix-jdk15on:1.54" level="project" />
-    <orderEntry type="library" name="Maven: org.apache.nifi:nifi-processor-utils:1.0.0" level="project" />
+    <orderEntry type="library" name="Maven: net.minidev:json-smart:1.1.1" level="project" />
+    <orderEntry type="library" name="Maven: org.slf4j:slf4j-api:1.7.5" level="project" />
+    <orderEntry type="library" name="Maven: org.apache.nifi:nifi-api:0.6.1" level="project" />
+    <orderEntry type="library" name="Maven: org.apache.nifi:nifi-utils:0.6.1" level="project" />
+    <orderEntry type="library" name="Maven: org.apache.nifi:nifi-processor-utils:0.6.1" level="project" />
+    <orderEntry type="library" name="Maven: org.apache.nifi:nifi-security-utils:0.6.1" level="project" />
     <orderEntry type="library" name="Maven: commons-io:commons-io:1.3.2" level="project" />
-    <orderEntry type="library" scope="TEST" name="Maven: org.apache.nifi:nifi-mock:1.0.0" level="project" />
-    <orderEntry type="library" scope="TEST" name="Maven: org.apache.nifi:nifi-framework-api:1.0.0" level="project" />
-    <orderEntry type="library" scope="TEST" name="Maven: org.apache.nifi:nifi-expression-language:1.0.0" level="project" />
+    <orderEntry type="library" scope="TEST" name="Maven: org.apache.nifi:nifi-mock:0.6.1" level="project" />
+    <orderEntry type="library" scope="TEST" name="Maven: org.apache.nifi:nifi-expression-language:0.6.1" level="project" />
     <orderEntry type="library" scope="TEST" name="Maven: org.antlr:antlr-runtime:3.5.2" level="project" />
-    <orderEntry type="library" scope="TEST" name="Maven: com.jayway.jsonpath:json-path:2.0.0" level="project" />
-    <orderEntry type="library" name="Maven: net.minidev:json-smart:2.1.1" level="project" />
-    <orderEntry type="library" name="Maven: net.minidev:asm:1.0.2" level="project" />
-    <orderEntry type="library" name="Maven: asm:asm:3.3.1" level="project" />
-    <orderEntry type="library" scope="TEST" name="Maven: org.apache.nifi:nifi-data-provenance-utils:1.0.0" level="project" />
+    <orderEntry type="library" scope="TEST" name="Maven: org.apache.nifi:nifi-data-provenance-utils:0.6.1" level="project" />
     <orderEntry type="library" scope="TEST" name="Maven: junit:junit:4.10" level="project" />
     <orderEntry type="library" scope="TEST" name="Maven: org.hamcrest:hamcrest-core:1.1" level="project" />
     <orderEntry type="library" name="Maven: com.microsoft.azure:azure-client-authentication:1.0.0-SNAPSHOT" level="project" />
@@ -35,8 +47,10 @@
     <orderEntry type="library" name="Maven: javax.mail:mail:1.4.7" level="project" />
     <orderEntry type="library" name="Maven: javax.activation:activation:1.1" level="project" />
     <orderEntry type="library" name="Maven: net.jcip:jcip-annotations:1.0" level="project" />
+    <orderEntry type="library" name="Maven: net.minidev:json-smart:1.1.1" level="project" />
     <orderEntry type="library" name="Maven: com.nimbusds:lang-tag:1.4" level="project" />
     <orderEntry type="library" name="Maven: com.nimbusds:nimbus-jose-jwt:3.1.2" level="project" />
+    <orderEntry type="library" name="Maven: org.bouncycastle:bcprov-jdk15on:1.51" level="project" />
     <orderEntry type="library" name="Maven: com.google.code.gson:gson:2.2.4" level="project" />
     <orderEntry type="library" name="Maven: org.slf4j:slf4j-api:1.7.5" level="project" />
     <orderEntry type="library" name="Maven: commons-codec:commons-codec:1.10" level="project" />
@@ -58,3 +72,5 @@
     <orderEntry type="library" name="Maven: com.microsoft.azure:azure-mgmt-datalake-store:1.0.0-SNAPSHOT" level="project" />
   </component>
 </module>
+Contact GitHub API Training Shop Blog About
+© 2017 GitHub, Inc. Terms Privacy Security Status Help
