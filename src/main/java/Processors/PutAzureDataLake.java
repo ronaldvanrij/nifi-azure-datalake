@@ -1,38 +1,45 @@
 package Processors;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.ArrayList;
 import java.util.concurrent.TimeUnit;
 
-import com.microsoft.azure.CloudException;
-import com.microsoft.azure.credentials.ApplicationTokenCredentials;
-import com.microsoft.azure.management.datalake.store.*;
-import com.microsoft.azure.management.datalake.store.models.*;
-import com.microsoft.rest.credentials.ServiceClientCredentials;
-
-import java.io.*;
-
-import org.apache.nifi.annotation.lifecycle.*;
+import org.apache.commons.io.IOUtils;
+import org.apache.nifi.annotation.behavior.InputRequirement;
+import org.apache.nifi.annotation.behavior.InputRequirement.Requirement;
+import org.apache.nifi.annotation.behavior.ReadsAttribute;
+import org.apache.nifi.annotation.behavior.SideEffectFree;
+import org.apache.nifi.annotation.documentation.CapabilityDescription;
+import org.apache.nifi.annotation.documentation.Tags;
+import org.apache.nifi.annotation.lifecycle.OnRemoved;
+import org.apache.nifi.annotation.lifecycle.OnScheduled;
+import org.apache.nifi.annotation.lifecycle.OnShutdown;
+import org.apache.nifi.annotation.lifecycle.OnStopped;
+import org.apache.nifi.annotation.lifecycle.OnUnscheduled;
 import org.apache.nifi.components.PropertyDescriptor;
 import org.apache.nifi.flowfile.FlowFile;
+import org.apache.nifi.flowfile.attributes.CoreAttributes;
+import org.apache.nifi.logging.ComponentLog;
 import org.apache.nifi.processor.AbstractProcessor;
 import org.apache.nifi.processor.ProcessContext;
 import org.apache.nifi.processor.ProcessSession;
 import org.apache.nifi.processor.ProcessorInitializationContext;
 import org.apache.nifi.processor.Relationship;
-import org.apache.nifi.flowfile.attributes.CoreAttributes;
-import org.apache.nifi.annotation.behavior.ReadsAttribute;
-import org.apache.nifi.annotation.behavior.SideEffectFree;
-import org.apache.nifi.annotation.documentation.CapabilityDescription;
-import org.apache.nifi.annotation.documentation.Tags;
 import org.apache.nifi.processor.exception.ProcessException;
 import org.apache.nifi.processor.io.InputStreamCallback;
 import org.apache.nifi.processor.util.StandardValidators;
-import org.apache.nifi.annotation.behavior.InputRequirement;
-import org.apache.nifi.annotation.behavior.InputRequirement.Requirement;
+
+import com.microsoft.azure.datalake.store.ADLException;
+import com.microsoft.azure.datalake.store.ADLStoreClient;
+import com.microsoft.azure.datalake.store.IfExists;
+import com.microsoft.azure.datalake.store.oauth2.AzureADAuthenticator;
+import com.microsoft.azure.datalake.store.oauth2.AzureADToken;
 
 
 /**
@@ -53,15 +60,9 @@ public class PutAzureDataLake extends AbstractProcessor {
     private List<PropertyDescriptor> properties;
     private Set<Relationship> relationships;
 
-    // Azure objects
-    private DataLakeStoreAccountManagementClient adlsClient;
-    private DataLakeStoreFileSystemManagementClient adlsFileSystemClient;
-    private String adlsAccountName;
-
-    public static final String REPLACE_RESOLUTION = "replace";
-    public static final String APPEND_RESOLUTION = "append";
-    public static final String FAIL_RESOLUTION = "fail";
-
+    public static final String OVERWRITE_RESOLUTION = "OVERWRITE";
+    public static final String FAIL_RESOLUTION = "FAIL";
+    
     private Boolean needRefresh = true;
 
     public static final PropertyDescriptor PATH_NAME = new PropertyDescriptor.Builder()
@@ -76,10 +77,10 @@ public class PutAzureDataLake extends AbstractProcessor {
             .name("Overwrite policy")
             .description("Specifies what to do if the file already exists on Data Lake")
             .required(true)
-            .defaultValue(APPEND_RESOLUTION)
-            .allowableValues(REPLACE_RESOLUTION, APPEND_RESOLUTION, FAIL_RESOLUTION)
+            .defaultValue(OVERWRITE_RESOLUTION)
+            .allowableValues(OVERWRITE_RESOLUTION, FAIL_RESOLUTION)
             .build();
-
+    
     public static final PropertyDescriptor ACCOUNT_NAME = new PropertyDescriptor.Builder()
             .name("Account name")
             .description("Azure account name")
@@ -115,6 +116,13 @@ public class PutAzureDataLake extends AbstractProcessor {
             .sensitive(true)
             .addValidator(StandardValidators.NON_EMPTY_VALIDATOR)
             .build();
+    
+    public static final PropertyDescriptor OCTALPERMISSIONS = new PropertyDescriptor.Builder()
+            .name("File permissions")
+            .description("Permissions the created file gets, e.g. 744")
+            .required(true)
+            .addValidator(StandardValidators.NON_EMPTY_VALIDATOR)
+            .build();
 
     public static final Relationship REL_SUCCESS = new Relationship.Builder()
             .name("success")
@@ -125,6 +133,12 @@ public class PutAzureDataLake extends AbstractProcessor {
             .name("failure")
             .description("Failed to put file to ADL")
             .build();
+
+    private String clientId;
+    private String clientSecret;
+    private String accountName;
+    private String tenantId;
+    private String octalPermissions;
 
     @Override
     protected void init(final ProcessorInitializationContext context) {
@@ -146,40 +160,33 @@ public class PutAzureDataLake extends AbstractProcessor {
 
     @OnScheduled
     public void onScheduled(final ProcessContext context) {
-        // Process Azure credentials
-        final String clientId = context.getProperty(CLIENT_ID).getValue();
-        final String tenantId = context.getProperty(TENANT_ID).getValue();
-        final String clientSecret = context.getProperty(CLIENT_SECRET).getValue();
-        final String subscriptionId = context.getProperty(SUBSCRIPTION_ID).getValue();
-        final String accountName = context.getProperty(ACCOUNT_NAME).getValue();
-
-        AzureSetup(clientId, tenantId, clientSecret, subscriptionId, accountName);
+        refreshParameters(context);
     }
 
-    private void AzureSetup(String clientId, String tenantId, String clientSecret,
-                            String subscriptionId, String accountName) {
-
-        getLogger().debug("Setting up ADL credentials");
-        ApplicationTokenCredentials credentials = new ApplicationTokenCredentials(clientId,
-                tenantId, clientSecret, null);
-        adlsAccountName = accountName;
-        adlsClient = new DataLakeStoreAccountManagementClientImpl(credentials);
-        adlsFileSystemClient = new DataLakeStoreFileSystemManagementClientImpl(credentials);
-        adlsClient.setSubscriptionId(subscriptionId);
-        needRefresh = false;
+    private void refreshParameters(ProcessContext context) {
+        this.clientId = context.getProperty(CLIENT_ID).getValue();
+        this.clientSecret = context.getProperty(CLIENT_SECRET).getValue();
+        this.accountName = context.getProperty(ACCOUNT_NAME).getValue() + ".azuredatalakestore.net";
+        this.tenantId = context.getProperty(TENANT_ID).getValue();
+        this.octalPermissions = context.getProperty(OCTALPERMISSIONS).getValue();
     }
 
-    private void AzureCreateFile(String path, String contents, boolean force) throws IOException, CloudException {
-        byte[] bytesContents = contents.getBytes();
-
-        adlsFileSystemClient.getFileSystemOperations().create(adlsAccountName, path, bytesContents, force);
-    }
-
-    private void AzureAppendFile(String path, String contents) throws IOException, CloudException {
-        byte[] bytesContents = contents.getBytes();
-
-        adlsFileSystemClient.getFileSystemOperations().concurrentAppend(adlsAccountName,
-                path, bytesContents, AppendModeType.AUTOCREATE);
+    /**
+     * Obtain OAuth2 token and use token to create client object.
+     *
+     * @return Authorized client with access to the FQDN
+     */
+    private ADLStoreClient getClient() throws java.io.IOException {
+        ADLStoreClient client;
+        try {
+            String endpoint = "https://login.microsoftonline.com/"+this.tenantId+"/oauth2/token";
+            AzureADToken token = AzureADAuthenticator.getTokenUsingClientCreds(endpoint, this.clientId, this.clientSecret);
+            client = ADLStoreClient.createClient(this.accountName, token);
+        } catch (java.io.IOException ex) {
+            getLogger().error("Acquiring Azure AD token and instantiating ADLS client failed with exception: {}", new Object[] {ex.getMessage()});
+            throw ex;
+        }
+        return client;
     }
 
     @Override
@@ -191,15 +198,9 @@ public class PutAzureDataLake extends AbstractProcessor {
         }
         // Update credentials if required
         if (needRefresh) {
-            final String clientId = context.getProperty(CLIENT_ID).getValue();
-            final String tenantId = context.getProperty(TENANT_ID).getValue();
-            final String clientSecret = context.getProperty(CLIENT_SECRET).getValue();
-            final String subscriptionId = context.getProperty(SUBSCRIPTION_ID).getValue();
-            final String accountName = context.getProperty(ACCOUNT_NAME).getValue();
-
-            AzureSetup(clientId, tenantId, clientSecret, subscriptionId, accountName);
+            refreshParameters(context);
         }
-        final String overwritePolicy = context.getProperty(OVERWRITE).getValue();
+        final IfExists overwritePolicy = IfExists.valueOf(context.getProperty(OVERWRITE).getValue());
         final String filename = flowFile.getAttributes().get(CoreAttributes.FILENAME.key());
         final String path = context.getProperty(PATH_NAME).evaluateAttributeExpressions(flowFile).getValue();
         String fullpath;
@@ -209,53 +210,40 @@ public class PutAzureDataLake extends AbstractProcessor {
         else
             fullpath = path.concat("/").concat(filename);
 
-        getLogger().debug("Attempting to send Flowfile to ADL path: {}",
-                new Object[] {filename});
+        getLogger().debug("Attempting to send Flowfile to ADL path: {}", new Object[] {filename});
         final long startNanos = System.nanoTime();
+
+        final ComponentLog logger = getLogger();
+
         try {
+
+            ADLStoreClient client = getClient();
+
             session.read(flowFile, new InputStreamCallback() {
+                
                 @Override
                 public void process(final InputStream rawIn) throws IOException {
-                    try (final InputStream in = new BufferedInputStream(rawIn)) {
-                        // Read contents of Flowfile into string
-                        byte[] contents = new byte[1024];
-                        int bytesRead = 0;
-                        String s = "";
-                        while((bytesRead = in.read(contents)) != -1) {
-                            s = s.concat(new String(contents, 0, bytesRead));
-                        }
-                        try {
-                            getLogger().debug("Saving file to ADL");
-                            // Send file to ADL
-                            switch (overwritePolicy) {
-                                case REPLACE_RESOLUTION:
-                                    AzureCreateFile(fullpath, s, true);
-                                    break;
-                                case APPEND_RESOLUTION:
-                                    AzureAppendFile(fullpath, s);
-                                    break;
-                                case FAIL_RESOLUTION:
-                                    AzureCreateFile(fullpath, s, false);
-                                    break;
-                                default:
-                                    break;
-                            }
-                        } catch (IOException | CloudException ae) {
-                            getLogger().error("Failed to upload file to ADL");
-                            throw new IOException(ae);
-                        }
+                    try (OutputStream stream = client.createFile(fullpath, overwritePolicy, octalPermissions, true)) {
+                        IOUtils.copy(rawIn, stream);
+                    } catch (ADLException ex) {
+                        logger.error("Writing to ADLS stream {} failed with ADLS exception: {}", new Object[]{fullpath, ex.getMessage()});
+                    } catch (IOException ex) {
+                        logger.error("Creating ADLS stream {} failed with IO exception: {}", new Object[]{fullpath, ex.getMessage()});
                     }
                 }
             });
+            
             // Transfer flowfile
             final long millis = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startNanos);
-            getLogger().info("Successfully put {} to Azure Datalake in {} milliseconds",
-                    new Object[] {fullpath, millis});
+            getLogger().info("Successfully put {} to Azure Datalake in {} milliseconds", new Object[] {fullpath, millis});
             session.transfer(flowFile, REL_SUCCESS);
             session.getProvenanceReporter().send(flowFile, filename, millis);
         }  catch (final ProcessException e) {
-            getLogger().error("Failed to put {} to ADL owing to {}",
-                    new Object[]{flowFile, e});
+            getLogger().error("Failed to put {} to ADL owing to {}", new Object[]{flowFile, e});
+            flowFile = session.penalize(flowFile);
+            session.transfer(flowFile, REL_FAILURE);
+        } catch (IOException e) {
+            getLogger().error("Failed to get a ADLS client: {}", new Object[]{e});
             flowFile = session.penalize(flowFile);
             session.transfer(flowFile, REL_FAILURE);
         }

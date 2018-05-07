@@ -12,7 +12,8 @@ The content of the flow file will be written to the path specified in Azure Data
 in the flow file's attribute.  If the file already exists, it can either be overwritten, appended or routed to the
 processor's failure output.
 
-This doesn't yet support chunking, so may not work well for very large individual flow files.
+This Processor supports chunking, so it works well for very large individual flow files and omits the 28.6MB limit 
+enforced by Azure for file creation. 
 
 ## To compile
 Compile using `mvn clean install`.  It is currently compiled for Java 8.
